@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>IndyCar Races 2025</title>
+    	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.0/dist/leaflet.css"/>
+
+    <style>
+ 	html, body, #map { width: 100%; height: 100%; margin: 0; background: #fff; }
+     .legend {
+    line-height: 40px;
+    font-size: 16px;
+    width: 190px;
+    color: #333333;
+    padding: 10px 8px;
+    background: white;
+    background: rgba(255,255,255,0.5);
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    border-radius: 5px;
+    font-family: 'Titillium Web', sans-serif;
+    margin-top: 100px;
+
+}
+ 
+.legend i {
+    width: 20px;
+    height: 20px;
+    float: left;
+    margin-right: 8px;
+    opacity: 0.9;
+}
+.legend p {
+    font-size: 14px;
+    line-height: 20px;
+    margin: 0;
+}
+#schedule h3 {
+        font-family: 'Arial', sans-serif;
+        font-size: 18px;
+        color: #333;
+        margin-bottom: 10px;
+        margin-top: 0px;
+    }
+
+    #schedule li {
+        font-family: 'Arial', sans-serif;
+        font-size: 14px;
+        color: #007BFF;
+        padding: 5px;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        background: #f9f9f9;
+        transition: background 0.3s;
+    }
+
+    #schedule li:hover {
+        background: #007BFF;
+        color: rgb(255, 255, 255);
+    }
+    #track-panel img {
+        width: 100%;
+        height: auto;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+
+    #track-panel h2 {
+        font-size: 28px;
+        font-family: 'cursive', serif;
+        margin-bottom: 10px;
+        color: #333;
+    }
+
+    #track-panel p {
+        font-size: 16px;
+        font-family: 'Arial', sans-serif;
+        margin-bottom: 10px;
+        color: #555;
+    }
+
+    #track-panel a {
+        color: #007BFF;
+        text-decoration: none;
+        font-size: 16px;
+        font-family: 'Roboto', sans-serif;
+    }
+
+    #track-panel a:hover {
+        text-decoration: underline;
+    }
+    .leaflet-control-zoom {
+        position: absolute;
+        top: 0px; /* Adjust the vertical position */
+        left: 335px; /* Adjust the horizontal position */
+        z-index: 1000; /* Ensure it appears above other elements */
+    }
+    header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background: #007BFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 20px;
+    z-index: 1000; /* Ensure the header stays on top of the map */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+html, body {
+    overflow: hidden; /* Disable scrolling */
+    height: 100%;     /* Ensure the content fits within the viewport */
+    margin: 0;        /* Remove any default margin */
+    padding: 0;       /* Remove any default padding */
+}
+    </style>
+    <script src="https://unpkg.com/leaflet@1.7.0/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <script src="./assets/IndyCar (2).js"></script> <!-- Assuming this is the path to your IndyCar data file -->
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<!--Logo header-->
+<header style="position: fixed; top: 0; left: 0; width: 100%; height: 60px; background: #007BFF; display: flex; align-items: center; justify-content: center; padding: 0 20px; z-index: 2000; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+    <img src="./images/Logo.png" alt="IndyCar Logo" style="height: 55px; margin-right: 10px;">
+    <h1 style="color: white; font-size: 20px; margin: 0;">IndyCar Races 2025</h1>
+</header>
+<body>
+    <!--Div container for map-->
+    <div id="map" style="position: absolute; top: 60px; bottom: 0; left: 0; right: 0;"></div>    
+    <!--Schedule for map-->
+        <div id="schedule" style="position: absolute; top: 70px; left: 10px; z-index: 1000; background-color: white; padding: 10px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.5); height: calc(100% - 150px); overflow-y: auto;">
+        <h3 style="position: sticky; top: 0; background: white; text-align: center; padding: 5px; z-index: 10; border-bottom: 1px solid #ddd;">2025 Schedule</h3>
+        <ul id="schedule-list" style="list-style: none; padding: 0; margin: 0;"></ul>
+    </div>
+    <!--Panel div container-->
+        <div id="track-panel" style="position: fixed; top: 0; right: -400px; width: 400px; height: 100%; background: white; box-shadow: -2px 0 5px rgba(0,0,0,0.5); z-index: 2000; overflow-y: auto; transition: right 0.5s ease;">
+        <button id="close-panel" style="position: absolute; top: 10px; left: 10px; background: #007BFF; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Close</button>
+        <div id="track-content" style="padding: 20px; font-family: Arial, sans-serif;">
+            <!-- Content will be dynamically added here -->
+        </div>
+    </div>
+    <!--Popup-->
+        <div id="welcome-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 3000;">
+        <div style="background: white; padding: 20px; border-radius: 10px; width: 80%; max-width: 500px; text-align: center; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);">
+            <h2>Welcome to the IndyCar Schedule for 2025!</h2>
+            <p>This map allows you to explore the 2025 IndyCar race schedule. The exciting calendar this year consists of 17 rounds at 15 tracks, all of which you can fly to and view by clciking on an event in the schedule. Once you have flown to a track, click on the track layout to view details about the track and event, and a link to the event's website. Please enjoy the many unique places the IndyCar circuit is visiting this year!</p>
+            <p>Click anywhere outside this box to close the popup.</p>
+        </div>
+    </div>
+ <script>
+    //Popup on open
+        document.getElementById('welcome-modal').addEventListener('click', function (e) {
+        if (e.target === this) {
+            this.style.display = 'none'; // Hide the modal
+        }
+    });
+    //Create map object
+         var indymap = L.map('map', {
+            center: [40.5820, -98.4617],
+            zoom: 5,
+            zoomControl: true,
+            maxZoom: 18,
+            minZoom: 1
+        });
+    //Adding Roads Basemap
+    var OpenStreetMap_Mapnik = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+	maxZoom: 19,
+	attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(indymap);
+    //Adding track data to map
+    //Black underlying layer for tracks
+    L.geoJSON(circuits, {
+        style: function (feature) {
+           if (feature.properties.type !== "S/F") 
+            return { 
+                color: "#000000", 
+                weight: 13, 
+                opacity: 1 
+            };
+        }
+    }).addTo(indymap);
+    // Adding track data with colored paths and checkered "S/F" lines
+L.geoJSON(circuits, {
+    style: function (feature) {
+        if (feature.properties.type === "S/F") {
+            return {
+                color: "black", // Base color
+                weight: 4,
+                opacity: 1,
+                dashArray: "1000, 1000", // Checkered effect
+                dashOffset: "0"
+            };
+        } else {
+            return trackStyle(feature); // Use the existing trackStyle function for other types
+        }
+    }
+}).addTo(indymap);
+ L.geoJSON(circuits, {
+    style: trackStyle,
+    onEachFeature: function (feature, layer) {
+        // Skip adding hover effects for "S/F" and "PL" lines
+        if (feature.properties.type === "S/F" || feature.properties.type === "PL") {
+            return; // Do nothing for these types
+        }
+
+        // Add hover effect to darken the track
+        layer.on('mouseover', function () {
+            const originalColor = trackStyle(feature).color; // Get the original color
+            const darkerColor = darkenColor(originalColor, 20); // Darken the color by 20%
+            layer.setStyle({
+                color: darkerColor, // Apply the darker color
+                weight: 8,          // Slightly thicker line
+                opacity: 1          // Full opacity
+            });
+        });
+
+        // Reset the style when the mouse leaves the track
+        layer.on('mouseout', function () {
+            layer.setStyle(trackStyle(feature)); // Reset to original style
+        });
+
+        // Add click event to open the sliding panel for other track types
+        layer.on('click', function () {
+            // Populate the panel with track details
+            var content = `
+                <h2>${feature.properties.race}</h2>
+                <img src="${feature.properties.image}" alt="${feature.properties.race}">
+                <p><strong>Type:</strong> ${feature.properties.type}</p>
+                <p><strong>Lap Distance:</strong> ${feature.properties.dist} miles</p>
+                <p><strong>Turns:</strong> ${feature.properties.turns}</p>
+                <p><strong>Location:</strong> ${feature.properties.loc}</p>
+                <a href="${feature.properties.website}" target="_blank">Visit Event Website</a>
+                <p><strong>${feature.properties.descrip}</strong></p>
+            `;
+
+            document.getElementById('track-content').innerHTML = content;
+
+            // Slide in the panel
+            document.getElementById('track-panel').style.right = '0';
+        });
+    }
+}).addTo(indymap);
+//darkenColor function
+function darkenColor(color, percent) {
+    // Convert hex color to RGB
+    const num = parseInt(color.slice(1), 16);
+    const r = (num >> 16) - Math.round((percent / 100) * 255);
+    const g = ((num >> 8) & 0x00FF) - Math.round((percent / 100) * 255);
+    const b = (num & 0x0000FF) - Math.round((percent / 100) * 255);
+
+    // Ensure RGB values are within bounds (0-255)
+    const newR = Math.max(0, Math.min(255, r));
+    const newG = Math.max(0, Math.min(255, g));
+    const newB = Math.max(0, Math.min(255, b));
+
+    // Convert back to hex
+    return `#${((1 << 24) + (newR << 16) + (newG << 8) + newB).toString(16).slice(1)}`;
+}
+//function to close the panel
+document.getElementById('close-panel').onclick = function () {
+    document.getElementById('track-panel').style.right = '-400px'; // Slide the panel out
+};
+    //Describing function for track stylings
+    function trackStyle(feature) {
+    switch (feature.properties.type) {
+        case "Street Course": // Street Circuit
+            return { color: "#FF5733", weight: 7, opacity: 0.8 };
+        case "Road Course": // Road Course
+            return { color: "#33FF57", weight: 7, opacity: 0.8 };
+        case "Oval": // Oval
+            return { color: "#3357FF", weight: 7, opacity: 0.8 };
+        case "PL": // Pitlane
+            return { color: "#808080", weight: 5, opacity: 0.8 };
+        case "S/F": // Start/Finish Line
+            return { color: "#000000", weight: 6, opacity: 1, dashArray: "2, 4" };
+        default:
+            return { color: "#000000", weight: 2, opacity: 0.8 };
+    }
+}
+    //Schedule data
+    var scheduleData = [
+        { date: "2025-03-02", event: "Firestone Grand Prix of St. Petersburg", location: "St. Petersburg, FL" },
+        { date: "2025-03-23", event: "The Thermal Club Indycar Grand Prix", location: "Thermal, CA"},
+        { date: "2025-04-13", event: "Acura Grand Prix of Long Beach", location: "Long Beach, CA" },
+        { date: "2025-05-04", event: "Children's of Alabama Indy Grand Prix", location: "Birmingham, AL" },
+        { date: "2025-05-10", event: "Sonsio Grand Prix", location: "Indianapolis, IN" },
+        { date: "2025-05-25", event: "109th Running of the Indianapolis 500", location: "Indianapolis, IN" },
+        { date: "2025-06-01", event: "Chevrolet Detroit Grand Prix", location: "Detroit, MI" },
+        { date: "2025-06-15", event: "Bommarito Automotive Group 500", location: "Madison, IL"},
+        { date: "2025-06-22", event: "XPEL Grand Prix at Road America", location: "Elkhart Lake, WI" },
+        { date: "2025-07-06", event: "Honda Indy 200 at Mid-Ohio", location: "Lexington, OH" },
+        { date: "2025-07-12", event: "Sukup Indycar Race Weekend Races 1 & 2", location: "Newton, IA" },
+        { date: "2025-07-20", event: "Ontario Honda Dealers Indy Toronto", location: "Toronto, ON" },
+        { date: "2025-07-27", event: "Indycar Grand Prix of Monterey", location: "Monterey, CA" },
+        { date: "2025-08-10", event: "Grand Prix of Portland", location: "Portland, OR" },
+        { date: "2025-08-24", event: "Snap-on Milwaukee Mile 250", location: "West Allis, WI"},
+        { date: "2025-08-31", event: "Big Machine Music City Grand Prix", location: "Lebanon, TN" },
+
+    ];
+    var scheduleList = document.getElementById("schedule-list");
+                // Populate schedule list
+        scheduleData.forEach(function (item) {
+            var listItem = document.createElement("li");
+            listItem.innerHTML = `<strong>${item.event}</strong><br>
+                                  <span>${item.date}</span><br>
+                                  <span>${item.location}</span>`;
+            listItem.style.cursor = "pointer";
+            listItem.style.marginBottom = "10px";
+        
+            // Add click functionality to fly to the race location
+                    listItem.onclick = function () {
+                    // Debugging: Log the event name
+                    console.log(`Clicked event: ${item.event}`);
+                    // Find the corresponding race in the circuits GeoJSON
+                    var raceFeature = circuits.features.find((feature) => {
+                    // Check if the feature has a race property
+                    if (!feature.properties.race) {
+                    return false; // Skip features without a race property
+                    }
+                    // Normalize strings for comparison
+                    var scheduleEvent = item.event.trim().toLowerCase();
+                    var geoJsonRace = feature.properties.event.trim().toLowerCase();
+                    return scheduleEvent === geoJsonRace;
+                    });
+                    if (raceFeature) {
+                    // Get the coordinates of the racetrack
+                    var coords = raceFeature.geometry.coordinates;
+                    // Check if the geometry is a LineString or MultiLineString
+                    var centerCoords;
+                    if (raceFeature.geometry.type === "LineString") {
+                    centerCoords = coords[0]; // Use the first coordinate for LineString
+                    } else if (raceFeature.geometry.type === "MultiLineString") {
+                    centerCoords = coords[0][0]; // Use the first coordinate of the first LineString for MultiLineString
+                    }
+                    // Fly to the racetrack's coordinates
+                     indymap.flyTo([centerCoords[1], centerCoords[0]], 16, { duration: 2 });
+                }
+             };
+        
+            scheduleList.appendChild(listItem); // Append the list item to the schedule list
+        }); // Close the forEach function
+    //Adding legend to map
+        var legend = L.control({ position: 'topright' });
+    legend.onAdd = function (map) {
+        var div = L.DomUtil.create('div', 'legend');
+        div.innerHTML += '<i style="background: #FF5733"></i> Street Circuit<br>';
+        div.innerHTML += '<i style="background: #33FF57"></i> Road Course<br>';
+        div.innerHTML += '<i style="background: #3357FF"></i> Oval<br>';
+        div.innerHTML += '<i style="background: #808080"></i> Pitlane<br>';
+        div.innerHTML += '<i style="background: #000000"></i> Start/Finish Line<br>';
+        return div;
+    };
+    legend.addTo(indymap);
+    var decorator = L.polylineDecorator(tracksLayer, {
+    patterns: [
+        { offset: 0, repeat: 10, symbol: L.Symbol.dash({ pixelSize: 10, pathOptions: { color: 'gold', weight: 2 } }) }
+    ]
+}).addTo(indymap);
+indymap.on('zoomend', function () {
+    // Reapply styles to ensure margins and positions are correct
+    document.getElementById('schedule').style.top = '70px';
+    document.querySelector('.legend').style.top = '70px';
+    document.querySelector('.leaflet-control-zoom').style.top = '70px';
+});
+
+  
+ </script>
